@@ -22,13 +22,30 @@
         }
 
         .name {
+            width: 50vw;
+            height: 50vh;
             font-size: 20vw;
-            color: #fff;
+            color: #ff8c00;
             text-align: center;
             font-weight: 900;
             letter-spacing: -0.05em;
-            animation: spin3d 2s linear infinite;
+            animation: spin3d 5s linear infinite;
             transform-style: preserve-3d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .blue {
+            color: #0066ff;
+        }
+
+        @media (max-width: 800px) and (max-height: 800px) {
+            .name {
+                width: 100vw;
+                height: 100vh;
+                font-size: 30vw;
+            }
         }
 
         @keyframes spin3d {
@@ -39,15 +56,9 @@
                 transform: rotateY(360deg);
             }
         }
-
-        @media (max-width: 768px) {
-            .name {
-                font-size: 30vw;
-            }
-        }
     </style>
 </head>
 <body>
-    <div class="name">FinnZan</div>
+    <div class="name"><span class="blue">F</span>inn<span class="blue">Z</span>an</div>
 </body>
 </html>
