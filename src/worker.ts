@@ -3,7 +3,9 @@ export default {
 		const url = new URL(request.url);
 
 		if (request.method === 'GET' && url.pathname === '/hello') {
-			return new Response('Hello from GET /hello', {
+			const name = (url.searchParams.get('name') ?? '').trim();
+			const message = name ? `Hello ${name}` : 'Hello';
+			return new Response(message, {
 				headers: {
 					'content-type': 'text/plain; charset=utf-8',
 				},
