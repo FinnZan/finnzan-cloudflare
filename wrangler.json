@@ -1,8 +1,17 @@
 {
 	"name": "finnzan-cloudflare",
 	"compatibility_date": "2025-10-08",
-	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"main": "./src/worker.ts",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "finnzan",
+			"database_id": "a3459da0-0388-4cbf-ad5f-5931b5d5f1ea"
+		}
+	],
 	"assets": {
 		"directory": "./src",
 		"binding": "ASSETS"
