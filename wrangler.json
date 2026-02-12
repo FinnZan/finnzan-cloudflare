@@ -2,9 +2,9 @@
 	"name": "finnzan-cloudflare",
 	"compatibility_date": "2025-10-08",
 	"compatibility_flags": ["nodejs_compat"],
-	"main": "./dist/_worker.js/index.js",
+	"main": "./src/worker.ts",
 	"assets": {
-		"directory": "./dist",
+		"directory": "./src",
 		"binding": "ASSETS"
 	},
 	"observability": {
