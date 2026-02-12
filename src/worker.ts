@@ -50,32 +50,49 @@ export default {
 					})
 					.join('');
 
-				const templateBaseUrl = new URL(request.url);
-				const templatePaths = ['/pages/logs.html', 'pages/logs.html'];
-				let templateResponse: Response | null = null;
-				let lastTemplateError = '';
-
-				for (const path of templatePaths) {
-					templateBaseUrl.pathname = path;
-					templateResponse = await env.ASSETS.fetch(new Request(templateBaseUrl.toString(), request));
-					if (templateResponse.ok) {
-						break;
-					}
-					const preview = (await templateResponse.text()).slice(0, 200);
-					lastTemplateError = `${templateResponse.status} ${templateResponse.statusText} ${preview}`.trim();
-				}
-
-				if (!templateResponse || !templateResponse.ok) {
-					return new Response(`Failed to load logs template. ${lastTemplateError}`, {
-						status: 500,
-						headers: { 'content-type': 'text/plain; charset=utf-8' },
-					});
-				}
-
-				const template = await templateResponse.text();
-				const html = template
-					.replace('{{generated_at}}', escapeHtml(new Date().toISOString()))
-					.replace('{{rows}}', htmlRows);
+				const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Request Logs</title>
+	<style>
+		*{box-sizing:border-box;margin:0;padding:0}
+		body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#0b0b0b;color:#f5f5f5;padding:24px}
+		h1{font-size:20px;margin-bottom:12px}
+		.meta{opacity:.8;margin-bottom:16px;font-size:12px}
+		table{width:100%;border-collapse:collapse;font-size:12px}
+		th,td{border:1px solid rgba(255,255,255,.15);padding:8px;vertical-align:top}
+		th{background:rgba(255,255,255,.06);text-align:left;position:sticky;top:0}
+		tr:nth-child(even) td{background:rgba(255,255,255,.03)}
+		.wrap{max-width:1200px;margin:0 auto}
+		.scroller{overflow:auto;border:1px solid rgba(255,255,255,.15)}
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<h1>Recent Requests (50)</h1>
+		<div class="meta">${escapeHtml(new Date().toISOString())}</div>
+		<div class="scroller">
+			<table>
+				<thead>
+					<tr>
+						<th>id</th>
+						<th>ts</th>
+						<th>method</th>
+						<th>path</th>
+						<th>query</th>
+						<th>name</th>
+						<th>ip</th>
+						<th>user_agent</th>
+					</tr>
+				</thead>
+				<tbody>${htmlRows}</tbody>
+			</table>
+		</div>
+	</div>
+</body>
+</html>`;
 
 				return new Response(html, {
 					headers: { 'content-type': 'text/html; charset=utf-8' },
