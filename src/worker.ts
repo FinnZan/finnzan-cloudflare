@@ -50,11 +50,23 @@ export default {
 					})
 					.join('');
 
-				const templateUrl = new URL(request.url);
-				templateUrl.pathname = '/pages/logs.html';
-				const templateResponse = await env.ASSETS.fetch(new Request(templateUrl.toString(), request));
-				if (!templateResponse.ok) {
-					return new Response('Failed to load logs template.', {
+				const templateBaseUrl = new URL(request.url);
+				const templatePaths = ['/pages/logs.html', 'pages/logs.html'];
+				let templateResponse: Response | null = null;
+				let lastTemplateError = '';
+
+				for (const path of templatePaths) {
+					templateBaseUrl.pathname = path;
+					templateResponse = await env.ASSETS.fetch(new Request(templateBaseUrl.toString(), request));
+					if (templateResponse.ok) {
+						break;
+					}
+					const preview = (await templateResponse.text()).slice(0, 200);
+					lastTemplateError = `${templateResponse.status} ${templateResponse.statusText} ${preview}`.trim();
+				}
+
+				if (!templateResponse || !templateResponse.ok) {
+					return new Response(`Failed to load logs template. ${lastTemplateError}`, {
 						status: 500,
 						headers: { 'content-type': 'text/plain; charset=utf-8' },
 					});
