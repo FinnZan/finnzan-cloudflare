@@ -12,13 +12,20 @@ const escapeHtml = (value: unknown): string => {
 };
 
 const renderNotesPage = (
-	opts: { saved?: boolean; error?: string; latest?: { ts: string; content: string } | null } = {},
+	opts: {
+		saved?: boolean;
+		cleared?: boolean;
+		error?: string;
+		latest?: { ts: string; content: string } | null;
+	} = {},
 ): string => {
 	const message = opts.error
 		? `<div class="msg err">${escapeHtml(opts.error)}</div>`
 		: opts.saved
 			? `<div class="msg ok">Saved.</div>`
-			: '';
+			: opts.cleared
+				? `<div class="msg ok">Cleared.</div>`
+				: '';
 
 	const latest =
 		opts.latest === undefined
@@ -39,9 +46,12 @@ const renderNotesPage = (
 		.wrap{max-width:900px;margin:0 auto}
 		h1{font-size:20px;margin-bottom:16px}
 		form{display:flex;flex-direction:column;gap:12px}
+		.actions{display:flex;gap:10px;align-items:center}
 		textarea{width:100%;min-height:55vh;resize:vertical;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#f5f5f5;font-size:14px;line-height:1.4}
 		button{align-self:flex-start;padding:10px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.12);color:#fff;cursor:pointer}
 		button:hover{background:rgba(255,255,255,.18)}
+		button.danger{background:rgba(231,76,60,.14)}
+		button.danger:hover{background:rgba(231,76,60,.22)}
 		.msg{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.18);font-size:13px}
 		.msg.ok{background:rgba(46,204,113,.12)}
 		.msg.err{background:rgba(231,76,60,.12)}
@@ -57,7 +67,10 @@ const renderNotesPage = (
 		${message}
 		<form method="POST" action="/notes">
 			<textarea name="content" placeholder="Write something..."></textarea>
-			<button type="submit">Save</button>
+			<div class="actions">
+				<button type="submit">Save</button>
+				<button class="danger" type="submit" formmethod="POST" formaction="/notes/clear" onclick="return confirm('Clear all notes?');">Clear all notes</button>
+			</div>
 		</form>
 		${latest}
 	</div>
@@ -83,9 +96,34 @@ export default {
 	): Promise<Response> {
 		const url = new URL(request.url);
 
+		if (url.pathname === '/notes/clear' && request.method === 'POST') {
+			if (!env.DB) {
+				const html = renderNotesPage({ error: 'D1 database binding is not configured.' });
+				return new Response(html, {
+					status: 500,
+					headers: { 'content-type': 'text/html; charset=utf-8' },
+				});
+			}
+
+			try {
+				await env.DB.prepare('DELETE FROM notes').bind().run();
+				return new Response(null, {
+					status: 303,
+					headers: { location: '/notes?cleared=1' },
+				});
+			} catch (err) {
+				const html = renderNotesPage({ error: `Failed to clear: ${String(err)}` });
+				return new Response(html, {
+					status: 500,
+					headers: { 'content-type': 'text/html; charset=utf-8' },
+				});
+			}
+		}
+
 		if (url.pathname === '/notes') {
 			if (request.method === 'GET') {
 				const saved = url.searchParams.get('saved') === '1';
+				const cleared = url.searchParams.get('cleared') === '1';
 				let latest: { ts: string; content: string } | null | undefined = undefined;
 				if (env.DB) {
 					try {
@@ -100,7 +138,7 @@ export default {
 					}
 				}
 
-				const html = renderNotesPage({ saved, latest });
+				const html = renderNotesPage({ saved, cleared, latest });
 				return new Response(html, {
 					headers: { 'content-type': 'text/html; charset=utf-8' },
 				});
