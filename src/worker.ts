@@ -11,6 +11,46 @@ const escapeHtml = (value: unknown): string => {
 		.replace(/'/g, '&#39;');
 };
 
+const renderNotesPage = (opts: { saved?: boolean; error?: string } = {}): string => {
+	const message = opts.error
+		? `<div class="msg err">${escapeHtml(opts.error)}</div>`
+		: opts.saved
+			? `<div class="msg ok">Saved.</div>`
+			: '';
+
+	return `<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Notes</title>
+	<style>
+		*{box-sizing:border-box;margin:0;padding:0}
+		body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#0b0b0b;color:#f5f5f5;padding:24px}
+		.wrap{max-width:900px;margin:0 auto}
+		h1{font-size:20px;margin-bottom:16px}
+		form{display:flex;flex-direction:column;gap:12px}
+		textarea{width:100%;min-height:55vh;resize:vertical;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#f5f5f5;font-size:14px;line-height:1.4}
+		button{align-self:flex-start;padding:10px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.12);color:#fff;cursor:pointer}
+		button:hover{background:rgba(255,255,255,.18)}
+		.msg{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.18);font-size:13px}
+		.msg.ok{background:rgba(46,204,113,.12)}
+		.msg.err{background:rgba(231,76,60,.12)}
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<h1>Notes</h1>
+		${message}
+		<form method="POST" action="/notes">
+			<textarea name="content" placeholder="Write something..."></textarea>
+			<button type="submit">Save</button>
+		</form>
+	</div>
+</body>
+</html>`;
+};
+
 export default {
 	async fetch(
 		request: Request,
@@ -28,6 +68,53 @@ export default {
 		ctx: ExecutionContext,
 	): Promise<Response> {
 		const url = new URL(request.url);
+
+		if (url.pathname === '/notes') {
+			if (request.method === 'GET') {
+				const saved = url.searchParams.get('saved') === '1';
+				const html = renderNotesPage({ saved });
+				return new Response(html, {
+					headers: { 'content-type': 'text/html; charset=utf-8' },
+				});
+			}
+
+			if (request.method === 'POST') {
+				if (!env.DB) {
+					const html = renderNotesPage({ error: 'D1 database binding is not configured.' });
+					return new Response(html, {
+						status: 500,
+						headers: { 'content-type': 'text/html; charset=utf-8' },
+					});
+				}
+
+				try {
+					const form = await request.formData();
+					const content = String(form.get('content') ?? '').trim();
+					if (!content) {
+						const html = renderNotesPage({ error: 'Note is empty.' });
+						return new Response(html, {
+							status: 400,
+							headers: { 'content-type': 'text/html; charset=utf-8' },
+						});
+					}
+
+					await env.DB.prepare('INSERT INTO notes (ts, content) VALUES (?, ?)')
+						.bind(new Date().toISOString(), content)
+						.run();
+
+					return new Response(null, {
+						status: 303,
+						headers: { location: '/notes?saved=1' },
+					});
+				} catch (err) {
+					const html = renderNotesPage({ error: `Failed to save: ${String(err)}` });
+					return new Response(html, {
+						status: 500,
+						headers: { 'content-type': 'text/html; charset=utf-8' },
+					});
+				}
+			}
+		}
 
 		if (request.method === 'GET' && url.pathname === '/logs') {
 			if (!env.DB) {
