@@ -11,12 +11,21 @@ const escapeHtml = (value: unknown): string => {
 		.replace(/'/g, '&#39;');
 };
 
-const renderNotesPage = (opts: { saved?: boolean; error?: string } = {}): string => {
+const renderNotesPage = (
+	opts: { saved?: boolean; error?: string; latest?: { ts: string; content: string } | null } = {},
+): string => {
 	const message = opts.error
 		? `<div class="msg err">${escapeHtml(opts.error)}</div>`
 		: opts.saved
 			? `<div class="msg ok">Saved.</div>`
 			: '';
+
+	const latest =
+		opts.latest === undefined
+			? ''
+			: opts.latest
+				? `<div class="latest"><div class="latestTitle">Latest note</div><div class="latestMeta">${escapeHtml(opts.latest.ts)}</div><pre class="latestBody">${escapeHtml(opts.latest.content)}</pre></div>`
+				: `<div class="latest"><div class="latestTitle">Latest note</div><div class="latestMeta">No notes yet.</div></div>`;
 
 	return `<!DOCTYPE html>
 <html lang="en">
@@ -36,6 +45,10 @@ const renderNotesPage = (opts: { saved?: boolean; error?: string } = {}): string
 		.msg{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.18);font-size:13px}
 		.msg.ok{background:rgba(46,204,113,.12)}
 		.msg.err{background:rgba(231,76,60,.12)}
+		.latest{margin-top:16px;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04)}
+		.latestTitle{font-size:14px;margin-bottom:6px}
+		.latestMeta{opacity:.8;font-size:12px;margin-bottom:10px}
+		.latestBody{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;line-height:1.4}
 	</style>
 </head>
 <body>
@@ -46,6 +59,7 @@ const renderNotesPage = (opts: { saved?: boolean; error?: string } = {}): string
 			<textarea name="content" placeholder="Write something..."></textarea>
 			<button type="submit">Save</button>
 		</form>
+		${latest}
 	</div>
 </body>
 </html>`;
@@ -72,7 +86,21 @@ export default {
 		if (url.pathname === '/notes') {
 			if (request.method === 'GET') {
 				const saved = url.searchParams.get('saved') === '1';
-				const html = renderNotesPage({ saved });
+				let latest: { ts: string; content: string } | null | undefined = undefined;
+				if (env.DB) {
+					try {
+						const { results } = await env.DB
+							.prepare('SELECT ts, content FROM notes ORDER BY id DESC LIMIT 1')
+							.bind()
+							.all();
+						const row = Array.isArray(results) && results.length > 0 ? (results[0] as Record<string, unknown>) : null;
+						latest = row ? { ts: String(row.ts ?? ''), content: String(row.content ?? '') } : null;
+					} catch {
+						latest = undefined;
+					}
+				}
+
+				const html = renderNotesPage({ saved, latest });
 				return new Response(html, {
 					headers: { 'content-type': 'text/html; charset=utf-8' },
 				});
