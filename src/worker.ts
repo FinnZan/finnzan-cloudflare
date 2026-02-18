@@ -193,27 +193,57 @@ export default {
 			' | Points: ' + payload.meta.points +
 			' | Skipped: ' + payload.meta.skipped +
 			' | Generated: ' + payload.meta.generatedAt;
-				const datasets = names.map((name, i) => ({
-					label: name,
-					data: (payload.series[name] || []),
-					borderColor: palette[i % palette.length],
-					backgroundColor: palette[i % palette.length],
-					borderWidth: 2,
-					tension: 0.2,
-					spanGaps: true,
-					pointRadius: 0,
-				}));
-				const ctx = document.getElementById('chart');
-				new Chart(ctx, {
+		const fmtTs = (iso) => {
+			const d = new Date(iso);
+			if (Number.isNaN(d.getTime())) return String(iso);
+			const mm = String(d.getMonth() + 1).padStart(2, '0');
+			const dd = String(d.getDate()).padStart(2, '0');
+			const hh = String(d.getHours()).padStart(2, '0');
+			const mi = String(d.getMinutes()).padStart(2, '0');
+			return mm + '-' + dd + ' ' + hh + ':' + mi;
+		};
+		const datasets = names.map((name, i) => ({
+			label: name,
+			data: (payload.series[name] || []),
+			borderColor: palette[i % palette.length],
+			backgroundColor: palette[i % palette.length],
+			borderWidth: 2,
+			tension: 0.2,
+			spanGaps: true,
+			pointRadius: 0,
+		}));
+		const ctx = document.getElementById('chart');
+		new Chart(ctx, {
 			type: 'line',
 			data: { labels, datasets },
 			options: {
 				responsive: true,
 				maintainAspectRatio: false,
 				interaction: { mode: 'nearest', intersect: false },
-				plugins: { legend: { labels: { color: '#f5f5f5' } } },
+				plugins: {
+					legend: { labels: { color: '#f5f5f5' } },
+					tooltip: {
+						callbacks: {
+							title: (items) => {
+								if (!items || !items.length) return '';
+								const idx = items[0].dataIndex;
+								const iso = labels[idx];
+								return fmtTs(iso);
+							},
+						},
+					},
+				},
 				scales: {
-					x: { type: 'category', ticks: { color: '#cfcfcf', maxRotation: 0, autoSkip: true }, grid: { color: 'rgba(255,255,255,.08)' } },
+					x: {
+						type: 'category',
+						ticks: {
+							color: '#cfcfcf',
+							maxRotation: 0,
+							autoSkip: true,
+							callback: (value) => fmtTs(value),
+						},
+						grid: { color: 'rgba(255,255,255,.08)' },
+					},
 					y: { min: 0, max: 1, ticks: { color: '#cfcfcf' }, grid: { color: 'rgba(255,255,255,.08)' } },
 				},
 			},
