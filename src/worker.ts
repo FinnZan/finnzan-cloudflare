@@ -96,6 +96,142 @@ export default {
 	): Promise<Response> {
 		const url = new URL(request.url);
 
+		if (url.pathname === '/kv/charts' && request.method === 'GET') {
+			if (!env.DB) {
+				return new Response('D1 database binding is not configured.', {
+					status: 500,
+					headers: { 'content-type': 'text/plain; charset=utf-8' },
+				});
+			}
+
+			try {
+				const { results } = await env.DB
+					.prepare('SELECT ts, name, value FROM kv ORDER BY ts ASC')
+					.bind()
+					.all();
+				const rows = Array.isArray(results) ? (results as unknown[]) : [];
+
+				const namesSet = new Set<string>();
+				const tsSet = new Set<string>();
+				const pointsByNameTs: Record<string, Record<string, number>> = {};
+				let totalPoints = 0;
+				let skipped = 0;
+				for (const r of rows) {
+					const row = r as Record<string, unknown>;
+					const ts = String(row.ts ?? '');
+					const name = String(row.name ?? '').trim();
+					const raw = String(row.value ?? '').trim();
+					const y = Number(raw);
+					if (!name || !ts || !Number.isFinite(y)) {
+						skipped += 1;
+						continue;
+					}
+					namesSet.add(name);
+					tsSet.add(ts);
+					(pointsByNameTs[name] ||= {})[ts] = y;
+					totalPoints += 1;
+				}
+
+				const names = Array.from(namesSet).sort();
+				const timestamps = Array.from(tsSet).sort();
+				const series: Record<string, Array<number | null>> = {};
+				for (const name of names) {
+					const map = pointsByNameTs[name] || {};
+					series[name] = timestamps.map((ts) => (Object.prototype.hasOwnProperty.call(map, ts) ? map[ts] : null));
+				}
+
+				const payload = {
+					names,
+					timestamps,
+					series,
+					meta: {
+						rows: rows.length,
+						points: totalPoints,
+						skipped,
+						generatedAt: new Date().toISOString(),
+					},
+				};
+
+				const payloadJson = JSON.stringify(payload).replace(/</g, '\\u003c');
+
+				const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>KV Charts</title>
+	<style>
+		*{box-sizing:border-box;margin:0;padding:0}
+		body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#0b0b0b;color:#f5f5f5;padding:24px}
+		.wrap{max-width:1200px;margin:0 auto}
+		h1{font-size:20px;margin-bottom:12px}
+		.meta{opacity:.8;margin-bottom:16px;font-size:12px;line-height:1.4}
+		.card{border:1px solid rgba(255,255,255,.15);border-radius:12px;background:rgba(255,255,255,.04);padding:12px}
+		canvas{width:100%;height:520px}
+	</style>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+	<div class="wrap">
+		<h1>KV Charts</h1>
+		<div class="meta" id="meta"></div>
+		<div class="card">
+			<canvas id="chart"></canvas>
+		</div>
+	</div>
+	<script>
+		const payload = ${payloadJson};
+		const palette = [
+			'#4dc9f6','#f67019','#f53794','#537bc4','#acc236','#166a8f','#00a950','#58595b','#8549ba',
+			'#ff6384','#36a2eb','#ffcd56','#c9cbcf','#2ecc71','#e74c3c','#9b59b6','#1abc9c','#e67e22'
+		];
+		const names = payload.names || [];
+		const labels = payload.timestamps || [];
+		document.getElementById('meta').textContent =
+			'Names: ' + names.length +
+			' | Rows: ' + payload.meta.rows +
+			' | Points: ' + payload.meta.points +
+			' | Skipped: ' + payload.meta.skipped +
+			' | Generated: ' + payload.meta.generatedAt;
+		const datasets = names.map((name, i) => ({
+			label: name,
+			data: (payload.series[name] || []),
+			borderColor: palette[i % palette.length],
+			backgroundColor: palette[i % palette.length],
+			borderWidth: 2,
+			tension: 0.2,
+			pointRadius: 0,
+		}));
+		const ctx = document.getElementById('chart');
+		new Chart(ctx, {
+			type: 'line',
+			data: { labels, datasets },
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				interaction: { mode: 'nearest', intersect: false },
+				plugins: { legend: { labels: { color: '#f5f5f5' } } },
+				scales: {
+					x: { type: 'category', ticks: { color: '#cfcfcf', maxRotation: 0, autoSkip: true }, grid: { color: 'rgba(255,255,255,.08)' } },
+					y: { ticks: { color: '#cfcfcf' }, grid: { color: 'rgba(255,255,255,.08)' } },
+				},
+			},
+		});
+	</script>
+</body>
+</html>`;
+
+				return new Response(html, {
+					headers: { 'content-type': 'text/html; charset=utf-8' },
+				});
+			} catch (err) {
+				return new Response(`Failed to query kv: ${String(err)}`, {
+					status: 500,
+					headers: { 'content-type': 'text/plain; charset=utf-8' },
+				});
+			}
+		}
+
 		if (url.pathname === '/kv' && request.method === 'POST') {
 			if (!env.DB) {
 				return new Response(
