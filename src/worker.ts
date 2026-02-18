@@ -96,6 +96,65 @@ export default {
 	): Promise<Response> {
 		const url = new URL(request.url);
 
+		if (url.pathname === '/kv' && request.method === 'POST') {
+			if (!env.DB) {
+				return new Response(
+					JSON.stringify({ ok: false, error: 'D1 database binding is not configured.' }),
+					{
+						status: 500,
+						headers: { 'content-type': 'application/json; charset=utf-8' },
+					},
+				);
+			}
+
+			let name = '';
+			let value = '';
+			const contentType = request.headers.get('content-type') ?? '';
+			try {
+				if (contentType.includes('application/json')) {
+					const body = (await request.json()) as { name?: unknown; value?: unknown };
+					name = String(body?.name ?? '').trim();
+					value = String(body?.value ?? '').trim();
+				} else {
+					const form = await request.formData();
+					name = String(form.get('name') ?? '').trim();
+					value = String(form.get('value') ?? '').trim();
+				}
+			} catch (err) {
+				return new Response(JSON.stringify({ ok: false, error: `Invalid body: ${String(err)}` }), {
+					status: 400,
+					headers: { 'content-type': 'application/json; charset=utf-8' },
+				});
+			}
+
+			if (!name) {
+				return new Response(JSON.stringify({ ok: false, error: 'Missing name.' }), {
+					status: 400,
+					headers: { 'content-type': 'application/json; charset=utf-8' },
+				});
+			}
+			if (!value) {
+				return new Response(JSON.stringify({ ok: false, error: 'Missing value.' }), {
+					status: 400,
+					headers: { 'content-type': 'application/json; charset=utf-8' },
+				});
+			}
+
+			try {
+				await env.DB.prepare('INSERT INTO kv (ts, name, value) VALUES (?, ?, ?)')
+					.bind(new Date().toISOString(), name, value)
+					.run();
+				return new Response(JSON.stringify({ ok: true }), {
+					headers: { 'content-type': 'application/json; charset=utf-8' },
+				});
+			} catch (err) {
+				return new Response(JSON.stringify({ ok: false, error: `Failed to store: ${String(err)}` }), {
+					status: 500,
+					headers: { 'content-type': 'application/json; charset=utf-8' },
+				});
+			}
+		}
+
 		if (url.pathname === '/notes/clear' && request.method === 'POST') {
 			if (!env.DB) {
 				const html = renderNotesPage({ error: 'D1 database binding is not configured.' });
