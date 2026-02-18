@@ -239,11 +239,8 @@ export default {
 						ticks: {
 							color: '#cfcfcf',
 							maxRotation: 0,
-							autoSkip: false,
-							callback: (value, index, ticks) => {
-								if (index === 0 || index === ticks.length - 1) return fmtTs(value);
-								return '';
-							},
+							autoSkip: true,
+							callback: (value) => fmtTs(value),
 						},
 						grid: { color: 'rgba(255,255,255,.08)' },
 					},
