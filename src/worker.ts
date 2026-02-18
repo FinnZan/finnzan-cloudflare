@@ -193,17 +193,18 @@ export default {
 			' | Points: ' + payload.meta.points +
 			' | Skipped: ' + payload.meta.skipped +
 			' | Generated: ' + payload.meta.generatedAt;
-		const datasets = names.map((name, i) => ({
-			label: name,
-			data: (payload.series[name] || []),
-			borderColor: palette[i % palette.length],
-			backgroundColor: palette[i % palette.length],
-			borderWidth: 2,
-			tension: 0.2,
-			pointRadius: 0,
-		}));
-		const ctx = document.getElementById('chart');
-		new Chart(ctx, {
+				const datasets = names.map((name, i) => ({
+					label: name,
+					data: (payload.series[name] || []),
+					borderColor: palette[i % palette.length],
+					backgroundColor: palette[i % palette.length],
+					borderWidth: 2,
+					tension: 0.2,
+					spanGaps: true,
+					pointRadius: 0,
+				}));
+				const ctx = document.getElementById('chart');
+				new Chart(ctx, {
 			type: 'line',
 			data: { labels, datasets },
 			options: {
