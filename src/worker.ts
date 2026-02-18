@@ -213,7 +213,7 @@ export default {
 				plugins: { legend: { labels: { color: '#f5f5f5' } } },
 				scales: {
 					x: { type: 'category', ticks: { color: '#cfcfcf', maxRotation: 0, autoSkip: true }, grid: { color: 'rgba(255,255,255,.08)' } },
-					y: { ticks: { color: '#cfcfcf' }, grid: { color: 'rgba(255,255,255,.08)' } },
+					y: { min: 0, max: 1, ticks: { color: '#cfcfcf' }, grid: { color: 'rgba(255,255,255,.08)' } },
 				},
 			},
 		});
