@@ -159,7 +159,7 @@ export default {
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>KV Charts</title>
+	<title>DELL</title>
 	<style>
 		*{box-sizing:border-box;margin:0;padding:0}
 		body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#0b0b0b;color:#f5f5f5;padding:24px}
@@ -173,7 +173,7 @@ export default {
 </head>
 <body>
 	<div class="wrap">
-		<h1>KV Charts</h1>
+		<h1>DELL</h1>
 		<div class="meta" id="meta"></div>
 		<div class="card">
 			<canvas id="chart"></canvas>
