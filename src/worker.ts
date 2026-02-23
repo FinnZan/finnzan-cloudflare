@@ -203,8 +203,22 @@ export default {
 					spanGaps: true,
 					pointRadius: 0,
 				}));
+				Chart.defaults.color = '#cfcfcf';
+				Chart.defaults.borderColor = 'rgba(255,255,255,.08)';
+				const chartAreaBg = {
+					id: 'chartAreaBg',
+					beforeDraw(chart) {
+						const { ctx, chartArea } = chart;
+						if (!chartArea) return;
+						ctx.save();
+						ctx.fillStyle = 'rgba(0,0,0,.35)';
+						ctx.fillRect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+						ctx.restore();
+					},
+				};
 				const ctx = document.getElementById('chart');
 				new Chart(ctx, {
+					plugins: [chartAreaBg],
 			type: 'line',
 			data: { labels, datasets },
 			options: {
