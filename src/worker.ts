@@ -249,12 +249,7 @@ export default {
 </html>`;
 
 				return new Response(html, {
-					headers: {
-						'content-type': 'text/html; charset=utf-8',
-						'cache-control': 'no-store, no-cache, must-revalidate, max-age=0',
-						pragma: 'no-cache',
-						expires: '0',
-					},
+					headers: { 'content-type': 'text/html; charset=utf-8' },
 				});
 			} catch (err) {
 				return new Response(`Failed to query kv: ${String(err)}`, {
