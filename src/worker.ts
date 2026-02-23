@@ -167,7 +167,7 @@ export default {
 		h1{font-size:20px;margin-bottom:12px}
 		.meta{opacity:.8;margin-bottom:16px;font-size:12px;line-height:1.4}
 		.card{border:1px solid rgba(255,255,255,.15);border-radius:12px;background:rgba(255,255,255,.04);padding:12px}
-		canvas{width:100%;height:520px}
+		canvas{width:100%;height:520px;background:#0b0b0b;border-radius:10px}
 	</style>
 	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -207,12 +207,12 @@ export default {
 				Chart.defaults.borderColor = 'rgba(255,255,255,.08)';
 				const chartAreaBg = {
 					id: 'chartAreaBg',
-					beforeDraw(chart) {
-						const { ctx, chartArea } = chart;
-						if (!chartArea) return;
+					afterLayout(chart) {
+						const { ctx } = chart;
 						ctx.save();
-						ctx.fillStyle = 'rgba(0,0,0,.35)';
-						ctx.fillRect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+						ctx.globalCompositeOperation = 'destination-over';
+						ctx.fillStyle = '#0b0b0b';
+						ctx.fillRect(0, 0, chart.width, chart.height);
 						ctx.restore();
 					},
 				};
