@@ -4,6 +4,17 @@ async function fetchKvChartsPayload() {
 	return res.json();
 }
 
+function fmtLocalTs(ts) {
+	const d = new Date(ts);
+	if (!Number.isFinite(d.getTime())) return String(ts);
+	return d.toLocaleString(undefined, {
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+	});
+}
+
 function buildDatasets(payload) {
 	const palette = [
 		'#4dc9f6','#f67019','#f53794','#537bc4','#acc236','#166a8f','#00a950','#58595b','#8549ba',
@@ -30,7 +41,8 @@ async function main() {
 	metaEl.textContent = 'Loading…';
 
 	const payload = await fetchKvChartsPayload();
-	const labels = payload.timestamps || [];
+	const rawTimestamps = payload.timestamps || [];
+	const labels = rawTimestamps.map(fmtLocalTs);
 	const datasets = buildDatasets(payload);
 
 	metaEl.textContent =
@@ -47,7 +59,18 @@ async function main() {
 			responsive: true,
 			maintainAspectRatio: false,
 			interaction: { mode: 'nearest', intersect: false },
-			plugins: { legend: { labels: { color: '#f5f5f5' } } },
+			plugins: {
+				legend: { labels: { color: '#f5f5f5' } },
+				tooltip: {
+					callbacks: {
+						title: function (items) {
+							if (!items || items.length === 0) return '';
+							const idx = items[0].dataIndex;
+							return fmtLocalTs(rawTimestamps[idx]);
+						},
+					},
+				},
+			},
 			scales: {
 				x: {
 					type: 'category',
