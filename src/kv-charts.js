@@ -84,7 +84,7 @@ async function main() {
 							return '';
 						},
 					},
-					grid: { color: 'rgba(255,255,255,.08)' },
+					grid: { display: false },
 				},
 				y: { min: 0, max: 1, ticks: { color: '#cfcfcf' }, grid: { color: 'rgba(255,255,255,.08)' } },
 			},
