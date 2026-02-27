@@ -49,7 +49,20 @@ async function main() {
 			interaction: { mode: 'nearest', intersect: false },
 			plugins: { legend: { labels: { color: '#f5f5f5' } } },
 			scales: {
-				x: { type: 'category', ticks: { color: '#cfcfcf', maxRotation: 0, autoSkip: true }, grid: { color: 'rgba(255,255,255,.08)' } },
+				x: {
+					type: 'category',
+					ticks: {
+						color: '#cfcfcf',
+						maxRotation: 0,
+						autoSkip: false,
+						callback: function (value, index, ticks) {
+							const label = this.getLabelForValue(value);
+							if (index === 0 || index === ticks.length - 1) return label;
+							return '';
+						},
+					},
+					grid: { color: 'rgba(255,255,255,.08)' },
+				},
 				y: { min: 0, max: 1, ticks: { color: '#cfcfcf' }, grid: { color: 'rgba(255,255,255,.08)' } },
 			},
 		},
