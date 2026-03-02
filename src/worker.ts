@@ -109,7 +109,7 @@ export default {
 
 			try {
 				const { results } = await env.DB
-					.prepare('SELECT ts, name, value FROM kv ORDER BY ts DESC LIMIT 5000')
+					.prepare('SELECT ts, name, value FROM kv ORDER BY ts DESC LIMIT 20000')
 					.bind()
 					.all();
 				const rows = Array.isArray(results) ? (results as unknown[]) : [];
