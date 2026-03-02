@@ -109,10 +109,17 @@ export default {
 
 			try {
 				const { results } = await env.DB
-					.prepare('SELECT ts, name, value FROM kv ORDER BY ts ASC')
+					.prepare('SELECT ts, name, value FROM kv ORDER BY ts DESC LIMIT 5000')
 					.bind()
 					.all();
 				const rows = Array.isArray(results) ? (results as unknown[]) : [];
+				rows.sort((a, b) => {
+					const ta = String((a as Record<string, unknown>)?.ts ?? '');
+					const tb = String((b as Record<string, unknown>)?.ts ?? '');
+					if (ta < tb) return -1;
+					if (ta > tb) return 1;
+					return 0;
+				});
 
 				const namesSet = new Set<string>();
 				const tsSet = new Set<string>();
