@@ -15,6 +15,25 @@ function fmtLocalTs(ts) {
 	});
 }
 
+function fmtHour(ts) {
+	const d = new Date(ts);
+	if (!Number.isFinite(d.getTime())) return '';
+	return d.toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
+function buildHourBoundaryIndices(rawTimestamps) {
+	const indices = new Set();
+	for (let i = 1; i < rawTimestamps.length; i++) {
+		const prev = new Date(rawTimestamps[i - 1]);
+		const curr = new Date(rawTimestamps[i]);
+		if (!Number.isFinite(prev.getTime()) || !Number.isFinite(curr.getTime())) continue;
+		if (prev.getHours() !== curr.getHours() || prev.toDateString() !== curr.toDateString()) {
+			indices.add(i);
+		}
+	}
+	return indices;
+}
+
 function buildDatasets(payload) {
 	const palette = [
 		'#4dc9f6','#f67019','#f53794','#537bc4','#acc236','#166a8f','#00a950','#58595b','#8549ba',
@@ -43,6 +62,7 @@ async function main() {
 	const payload = await fetchKvChartsPayload();
 	const rawTimestamps = payload.timestamps || [];
 	const labels = rawTimestamps.map(fmtLocalTs);
+	const hourIndices = buildHourBoundaryIndices(rawTimestamps);
 	const datasets = buildDatasets(payload);
 
 	metaEl.textContent =
@@ -79,8 +99,8 @@ async function main() {
 						maxRotation: 0,
 						autoSkip: false,
 						callback: function (value, index, ticks) {
-							const label = this.getLabelForValue(value);
-							if (index === 0 || index === ticks.length - 1) return label;
+							if (index === 0 || index === ticks.length - 1) return this.getLabelForValue(value);
+							if (hourIndices.has(index)) return fmtHour(rawTimestamps[index]);
 							return '';
 						},
 					},
