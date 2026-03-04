@@ -18,7 +18,7 @@ function fmtLocalTs(ts) {
 function fmtHour(ts) {
 	const d = new Date(ts);
 	if (!Number.isFinite(d.getTime())) return '';
-	return d.toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' });
+	return d.toLocaleString(undefined, { hour: 'numeric' });
 }
 
 function buildHourBoundaryIndices(rawTimestamps) {
