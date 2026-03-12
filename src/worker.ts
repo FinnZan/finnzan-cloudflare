@@ -123,7 +123,7 @@ export default {
 
 				const namesSet = new Set<string>();
 				const tsSet = new Set<string>();
-				const pointsByNameTs: Record<string, Record<string, number>> = {};
+				const valuesByNameTs: Record<string, Record<string, number>> = {};
 				let totalPoints = 0;
 				let skipped = 0;
 				for (const r of rows) {
@@ -138,7 +138,7 @@ export default {
 					}
 					namesSet.add(name);
 					tsSet.add(ts);
-					(pointsByNameTs[name] ||= {})[ts] = y;
+					(valuesByNameTs[name] ||= {})[ts] = y;
 					totalPoints += 1;
 				}
 
@@ -146,7 +146,7 @@ export default {
 				const timestamps = Array.from(tsSet).sort();
 				const series: Record<string, Array<number | null>> = {};
 				for (const name of names) {
-					const map = pointsByNameTs[name] || {};
+					const map = valuesByNameTs[name] || {};
 					series[name] = timestamps.map((ts) => (Object.prototype.hasOwnProperty.call(map, ts) ? map[ts] : null));
 				}
 

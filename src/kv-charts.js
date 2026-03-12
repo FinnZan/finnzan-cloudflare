@@ -4,7 +4,7 @@ async function fetchKvChartsPayload() {
 	return res.json();
 }
 
-function fmtLocalTs(ts) {
+function formatLocalTime(ts) {
 	const d = new Date(ts);
 	if (!Number.isFinite(d.getTime())) return String(ts);
 	return d.toLocaleString(undefined, {
@@ -15,7 +15,7 @@ function fmtLocalTs(ts) {
 	});
 }
 
-function fmtHour(ts) {
+function formatHour(ts) {
 	const d = new Date(ts);
 	if (!Number.isFinite(d.getTime())) return '';
 	return d.toLocaleString(undefined, { hour: 'numeric' });
@@ -61,7 +61,7 @@ async function main() {
 
 	const payload = await fetchKvChartsPayload();
 	const rawTimestamps = payload.timestamps || [];
-	const labels = rawTimestamps.map(fmtLocalTs);
+	const labels = rawTimestamps.map(formatLocalTime);
 	const hourIndices = buildHourBoundaryIndices(rawTimestamps);
 	const datasets = buildDatasets(payload);
 
@@ -86,7 +86,7 @@ async function main() {
 						title: function (items) {
 							if (!items || items.length === 0) return '';
 							const idx = items[0].dataIndex;
-							return fmtLocalTs(rawTimestamps[idx]);
+							return formatLocalTime(rawTimestamps[idx]);
 						},
 					},
 				},
@@ -100,7 +100,7 @@ async function main() {
 						autoSkip: false,
 						callback: function (value, index, ticks) {
 							if (index === 0 || index === ticks.length - 1) return this.getLabelForValue(value);
-							if (hourIndices.has(index)) return fmtHour(rawTimestamps[index]);
+							if (hourIndices.has(index)) return formatHour(rawTimestamps[index]);
 							return '';
 						},
 					},
