@@ -117,7 +117,7 @@ async function main(limit) {
 }
 
 const limitSelect = document.getElementById('limit');
-const initialLimit = limitSelect ? limitSelect.value : '10000';
+const initialLimit = limitSelect ? limitSelect.value : '2000';
 
 main(initialLimit).catch((err) => {
 	const metaEl = document.getElementById('meta');

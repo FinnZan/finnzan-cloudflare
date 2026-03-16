@@ -108,9 +108,9 @@ export default {
 			}
 
 			try {
-				const allowedLimits = [5000, 10000, 20000];
+				const allowedLimits = [2000, 5000, 10000, 20000];
 				const reqLimit = Number(url.searchParams.get('limit'));
-				const limit = allowedLimits.includes(reqLimit) ? reqLimit : 10000;
+				const limit = allowedLimits.includes(reqLimit) ? reqLimit : 2000;
 				const { results } = await env.DB
 					.prepare('SELECT ts, name, value FROM kv ORDER BY ts DESC LIMIT ?')
 					.bind(limit)
