@@ -1,5 +1,6 @@
-async function fetchKvChartsPayload() {
-	const res = await fetch('/kv/charts/data', { headers: { accept: 'application/json' } });
+async function fetchKvChartsPayload(limit) {
+	const url = '/kv/charts/data' + (limit ? '?limit=' + limit : '');
+	const res = await fetch(url, { headers: { accept: 'application/json' } });
 	if (!res.ok) throw new Error(`Failed to load data: ${res.status} ${res.statusText}`);
 	return res.json();
 }
@@ -52,14 +53,17 @@ function buildDatasets(payload) {
 	}));
 }
 
-async function main() {
+let currentChart = null;
+
+async function main(limit) {
 	const metaEl = document.getElementById('meta');
 	const canvas = document.getElementById('chart');
 	if (!metaEl || !canvas) return;
 
 	metaEl.textContent = 'Loading…';
+	if (currentChart) { currentChart.destroy(); currentChart = null; }
 
-	const payload = await fetchKvChartsPayload();
+	const payload = await fetchKvChartsPayload(limit);
 	const rawTimestamps = payload.timestamps || [];
 	const labels = rawTimestamps.map(formatLocalTime);
 	const hourIndices = buildHourBoundaryIndices(rawTimestamps);
@@ -72,7 +76,7 @@ async function main() {
 		' | Skipped: ' + (payload.meta ? payload.meta.skipped : 0) +
 		' | Generated: ' + (payload.meta ? payload.meta.generatedAt : '');
 
-	new Chart(canvas, {
+	currentChart = new Chart(canvas, {
 		type: 'line',
 		data: { labels, datasets },
 		options: {
@@ -112,8 +116,21 @@ async function main() {
 	});
 }
 
-main().catch((err) => {
+const limitSelect = document.getElementById('limit');
+const initialLimit = limitSelect ? limitSelect.value : '10000';
+
+main(initialLimit).catch((err) => {
 	const metaEl = document.getElementById('meta');
 	if (metaEl) metaEl.textContent = String(err);
 	console.error(err);
 });
+
+if (limitSelect) {
+	limitSelect.addEventListener('change', function () {
+		main(this.value).catch((err) => {
+			const metaEl = document.getElementById('meta');
+			if (metaEl) metaEl.textContent = String(err);
+			console.error(err);
+		});
+	});
+}

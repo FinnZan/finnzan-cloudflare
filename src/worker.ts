@@ -108,9 +108,12 @@ export default {
 			}
 
 			try {
+				const allowedLimits = [5000, 10000, 20000];
+				const reqLimit = Number(url.searchParams.get('limit'));
+				const limit = allowedLimits.includes(reqLimit) ? reqLimit : 10000;
 				const { results } = await env.DB
-					.prepare('SELECT ts, name, value FROM kv ORDER BY ts DESC LIMIT 10000')
-					.bind()
+					.prepare('SELECT ts, name, value FROM kv ORDER BY ts DESC LIMIT ?')
+					.bind(limit)
 					.all();
 				const rows = Array.isArray(results) ? (results as unknown[]) : [];
 				rows.sort((a, b) => {
