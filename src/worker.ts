@@ -108,7 +108,7 @@ export default {
 			}
 
 			try {
-				const allowedLimits = [2000, 5000, 10000, 20000];
+				const allowedLimits = [1000, 2000, 5000, 10000, 20000];
 				const reqLimit = Number(url.searchParams.get('limit'));
 				const limit = allowedLimits.includes(reqLimit) ? reqLimit : 2000;
 				const { results } = await env.DB
